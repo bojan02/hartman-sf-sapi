@@ -4,7 +4,7 @@
 
 	<groupId>com.integrationmatters</groupId>
 	<artifactId>sf-sapi</artifactId>
-	<version>1.0.0-${build.version}</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-application</packaging>
 
 	<name>sf-sapi</name>
@@ -13,9 +13,10 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<app.runtime>4.3.0-20210304</app.runtime>
+		<app.runtime>4.7.3</app.runtime>
 		<mule.maven.plugin.version>4.1.0</mule.maven.plugin.version>
-		<build.version>SNAPSHOT</build.version>
+		<app.name>sf-sapi-bp</app.name>
+		<env>Sandbox</env>
 		<munit.version>2.3.11</munit.version>
 	</properties>
 
@@ -41,6 +42,32 @@
 			</resource>
 		</resources>
 		<plugins>
+			<plugin>
+				<groupId>org.mule.tools.maven</groupId>
+					<artifactId>mule-maven-plugin</artifactId>
+					<version>${mule.maven.plugin.version}</version>
+					<extensions>true</extensions>
+					<configuration>
+					<cloudHubDeployment>
+		            <uri>https://anypoint.mulesoft.com</uri>
+		            <muleVersion>${app.runtime}</muleVersion>
+		            <username>${anypoint.username}</username>
+		            <password>${anypoint.password}</password>
+		            <applicationName>${app.name}</applicationName>
+		            <environment>${env}</environment>
+		            <region>us-east-2</region>
+		            <workers>1</workers>
+		            <workerType>MICRO</workerType>
+		            <objectStoreV2>true</objectStoreV2>
+		            <properties>
+		              <anypoint.platform.client_secret>${anypoint.anypointclientsecret}</anypoint.platform.client_secret>
+		              <anypoint.platform.client_id>${anypoint.anypointclientid}</anypoint.platform.client_id>
+		              <mule.key>${decryption.key}</mule.key>
+		            </properties>
+		          </cloudHubDeployment>
+					<classifier>mule-application</classifier>
+					</configuration>
+			</plugin>		
 			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-maven-plugin</artifactId>
