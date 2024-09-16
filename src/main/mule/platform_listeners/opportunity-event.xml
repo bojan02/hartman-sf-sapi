@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="opportunity-eventFlow" doc:id="2909f75a-eb80-45cc-8152-1d70add39549" >
+		<salesforce:modified-object-listener objectType="Opportunity" doc:name="On Modified Object" doc:id="14024ed4-d77a-4313-a04c-81d742f12d3d" config-ref="Salesforce_Config">
+			<scheduling-strategy >
+				<fixed-frequency frequency="20" startDelay="10" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<logger level="INFO" doc:name="Log Opportunity on modified object started" doc:id="31553b66-4438-4ff8-b516-0e03980fa89c" message='#["Log Opportunity on modified object started"]'/>
+		<set-variable value="#[payload.AccountId]" doc:name="Set vars.sfId" doc:id="9a3db350-d01d-4641-aac0-67d56f30ce30" variableName="sfId"/>
+		<flow-ref doc:name="get-account-by-id-flow" doc:id="d9482e34-731a-4b32-8109-d5aa22358588" name="get-account-by-id-flow" target="account" />
+		<ee:transform doc:name="Map to CDM" doc:id="f9570394-f1a2-46ef-8d35-6a37710ef5ca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"stage": payload.StageName,
+	"probability": payload.Probability as Number,
+	"amount": payload.Amount,
+	"closeDate": payload.CloseDate,
+	"accountName": vars.account.accountName,
+	"sfId": payload.AccountId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Send to MD API" doc:id="0b946f4b-2374-4b0c-94ae-eaca6e85b90a" config-ref="HTTP_Request_configuration" path="/sfopportunity">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
+	"client_id" : p('secure::clientIdenforcement.clientId')
+}]]]></http:headers>
+		</http:request>
+		<flow-ref doc:name="update-customer-priority-subflow" doc:id="f37e28b1-4f6c-4d8f-8b75-2cc85f9ad933" name="update-customer-priority-subflow"/>
+		<logger level="INFO" doc:name="Log Opportunity on modified object ended" doc:id="795e27b9-2aa5-40ce-acab-b235a31bdc57" message='#["Log Opportunity on modified object ended"]' />
+	</flow>
+	<sub-flow name="update-customer-priority-subflow" doc:id="1977ced9-ff63-43c9-bb1c-a61b3a43cb9a" >
+		<set-variable value="#[&quot;Select Id, Name, AccountId, StageName, Amount, CloseDate from Opportunity where AccountId='&quot; ++ vars.sfId ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="3d6264fb-cbd9-45a0-bdb5-78eabdd5443d" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="0444202a-d049-4a98-b8f4-21730f5c8907" name="get-sf-query-connector-subflow" />
+		<ee:transform doc:name="Set vars.condition" doc:id="52945290-3958-4f33-b0b6-82c5748ef44b" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="condition" ><![CDATA[%dw 2.0
+output application/json
+---
+if(sizeOf(payload) >= 3 and vars.account.customerPriority != "High") "set-high-customer-priority-subflow"
+else if(sizeOf(payload) < 3 and vars.account.customerPriority != "Medium") "set-medium-customer-priority-subflow"
+else "customer-priority-unchanged-subflow"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Route to Flow" doc:id="692b1fc5-761d-43c9-9a03-90122c6828e7" name="#[vars.condition]"/>
+	</sub-flow>
+	<sub-flow name="set-high-customer-priority-subflow" doc:id="8c19f829-8705-4397-be04-3d940578a8e8" >
+		<ee:transform doc:name="Preparing for SF Update" doc:id="ba172f82-1ff6-44af-9f87-374aae7ee5b2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Id": vars.account.sfId,
+	"Name": vars.account.accountName as String,
+	"Email__c": vars.account.email as String,
+	"Phone": vars.account.phone as String,
+	"CustomerPriority__c": "High",
+	"SLAExpirationDate__c": vars.account.slaExpirationDate,
+	"Active__c": vars.account.active as String,
+	"ExternalId__c": vars.account.dynId as String
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="post-account-flow" doc:id="7353a66c-762d-4ad2-9b88-a6c44086a346" name="post-account-flow" />
+		<logger level="INFO" doc:name="Log Customer Priority is set to High" doc:id="bcbe52bf-b621-490f-b663-90a5657d5478" message='#["Log Customer Priority is set to High"]' />
+	</sub-flow>
+	<sub-flow name="set-medium-customer-priority-subflow" doc:id="7daea037-08bb-436b-bb26-048dc2b02e7b" >
+		<ee:transform doc:name="Preparing for SF Update" doc:id="ddc01daf-6ca7-4316-9d98-e8137a5e8e6d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Id": vars.account.sfId,
+	"Name": vars.account.accountName as String,
+	"Email__c": vars.account.email as String,
+	"Phone": vars.account.phone as String,
+	"CustomerPriority__c": "Medium",
+	"SLAExpirationDate__c": vars.account.slaExpirationDate,
+	"Active__c": vars.account.active as String,
+	"ExternalId__c": vars.account.dynId as String
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="post-account-flow" doc:id="c19ba3b5-5588-4c5b-a4b8-b0543f3a5e5b" name="post-account-flow" />
+		<logger level="INFO" doc:name="Log Customer Priority is set to Medium" doc:id="09fa417f-15d3-40f5-be6c-ef72ac05c59a" message='#["Log Customer Priority is set to Medium"]' />
+	</sub-flow>
+	<sub-flow name="customer-priority-unchanged-subflow" doc:id="b3590b37-59f0-4faa-915f-d7030b2cc8c4">
+		<logger level="INFO" doc:name="Log Customer Priority is unchanged" doc:id="c5a806f8-5dab-4780-a725-48dad4eae62f" message='#["Log Customer Priority is unchanged"]' />
+	</sub-flow>
+</mule>

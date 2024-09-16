@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-contacts-flow" doc:id="7b3d7035-2144-4aa8-b559-d4526606fcc2" >
+		<set-variable value="#[attributes.queryParams.firstName]" doc:name="Set vars.firstName" doc:id="ee47ff59-58f7-4201-9992-87ae11b786e2" variableName="firstName"/>
+		<set-variable value="#[attributes.queryParams.lastName]" doc:name="Set vars.lastName" doc:id="6376df5e-dd07-4062-ad3b-e62847d66f8a" variableName="lastName"/>
+		<choice doc:name="Choice" doc:id="b5a228dd-12fd-4206-9860-ef4d5aeec1fc">
+			<when expression="#[!isEmpty(vars.firstName) or !isEmpty(vars.lastName)]">
+				<set-variable value="#[&quot;SELECT Id, FirstName, LastName, AccountId, ExternalId__c from Contact where FirstName = '&quot; ++ vars.firstName ++ &quot;' and LastName = '&quot; ++ vars.lastName ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="db1bf1b0-2c1a-46b0-afdc-6785f28c7e67" variableName="selectDynamicQuery"/>
+				<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="3810b52d-8beb-4b6a-9c4e-11c8116a6aab" name="get-sf-query-connector-subflow"/>
+				<ee:transform doc:name="Contacts mapping" doc:id="a00730aa-7f8b-4de9-927d-89982d437c30" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"id": payload.Id[0],
+    "firstName": payload.FirstName[0],
+    "lastName": payload.LastName[0],
+    "accountId": payload.AccountId[0]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<set-variable value='#["Select Id, FirstName, LastName, AccountId, ExternalId__c from Contact"]' doc:name="Set vars.selectDynamicQuery" doc:id="3a5e81c2-755a-4f00-a142-1a79ca104486" variableName="selectDynamicQuery" />
+				<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="7929b1ce-b564-4a2e-8738-0849c22f89ef" name="get-sf-query-connector-subflow" />
+				<ee:transform doc:name="Contacts mapping" doc:id="5d46fb01-3cc2-4de8-99f0-54fe2368eb0d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map (contactData, indexOfData) -> {
+	"id": contactData.Id,
+    "firstName": contactData.FirstName,
+    "lastName": contactData.LastName,
+    "accountId": contactData.AccountId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="get-contact-by-id-flow" doc:id="dd40d862-5da5-4595-a606-edc2494cb937" >
+		<set-variable value="#[&quot;SELECT Id, FirstName, LastName, AccountId, ExternalId__c from Contact where Id='&quot; ++ attributes.uriParams.'ID' ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="fd38d687-bf49-4782-8b6b-2414ce0df554" variableName="selectDynamicQuery"/>
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="693b5246-1f2b-4779-b3fa-02d75ca57a06" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-id-contact-mapping" doc:id="5930db0f-e9cb-4754-80b5-a7b2b22d502d" name="get-by-id-contact-mapping" />
+	</flow>
+	<flow name="get-contact-by-dynamics-id-flow" doc:id="2494a515-66ef-43ca-adc5-95504c441a31">
+		<set-variable value="#[&quot;SELECT Id, FirstName, LastName, AccountId, ExternalId__c from Contact where ExternalId__c='&quot; ++ attributes.uriParams.'ID' ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="f907efac-f4e7-4107-acd4-86e3874b687c" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="04d2f2b3-275a-4f9d-8251-731012542b79" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-id-contact-mapping" doc:id="42830c0a-3433-484b-9769-5dc40641c800" name="get-by-id-contact-mapping" />
+	</flow>
+	<flow name="post-contact-flow" doc:id="7fffcae1-4394-4ed5-92f5-4f05a6cb8414" >
+		<logger level="INFO" doc:name="Log upsert start " doc:id="6d2953ac-5797-443a-aa38-3c4c38b78f04" message='#["Upsert flow started"]' />
+		<ee:transform doc:name="Account mapping" doc:id="c5874f18-6866-4958-a087-a40928b80600" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	"Id": payload.Id,
+    "FirstName": payload.FirstName as String,
+    "LastName": payload.LastName as String,
+    "AccountId": payload.AccountId as String,
+    "ExternalId__c": payload.ExternalId__c
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Set upsert vars" doc:id="de51347f-6816-4c93-a0cb-2b1bdbe9baa3">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="objectType"><![CDATA["Contact"]]></ee:set-variable>
+				<ee:set-variable variableName="externalId"><![CDATA["Id"]]></ee:set-variable>
+				<ee:set-variable variableName="records"><![CDATA[payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="post-sf-upsert-connector-subflow" doc:id="7beb7a45-5da4-45c4-884d-29ab2680c5e8" name="post-sf-upsert-connector-subflow" target="contact"/>
+		<ee:transform doc:name="Account mapping message" doc:id="0f802023-6b84-4614-b57b-d50905f4e445" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	//"contactSfId": payload.Id[0],
+	"contactSfId": vars.contact.items[0].id,
+	"contactDynId": payload.ExternalId__c[0],
+	"firstName": payload.FirstName[0],
+	"lastName": payload.LastName[0],
+	"sfId": payload.AccountId[0]
+}
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log upsert end " doc:id="8ab0bf3c-7a26-4124-920c-5ecf9663aca9" message='#["Upsert flow ended"]' />
+	</flow>
+	<flow name="delete-contact-flow" doc:id="b209f2fa-4179-4644-a522-2b478eed97c7" >
+		<logger level="INFO" doc:name="Log delete start" doc:id="09e8bc9c-3df1-4f87-b454-6aa854f59165" message='#["Delete flow started"]' />
+		<ee:transform doc:name="Contact mapping" doc:id="08abf135-772b-472b-ab2f-d035ef1829f3">
+					<ee:message>
+					</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="records" ><![CDATA[%dw 2.0
+output application/java
+---
+[attributes.uriParams.'ID']]]></ee:set-variable>
+			</ee:variables>
+				</ee:transform>
+		<flow-ref doc:name="delete-sf-connector-subflow" doc:id="af302ef4-d868-4280-ba8c-c0076bf3212e" name="delete-sf-connector-subflow" />
+		<logger level="INFO" doc:name="Log delete end " doc:id="bfce09f3-c36e-4930-a858-68bc7bb2b6de" message='#["Delete flow ended"]' />
+	</flow>
+	<sub-flow name="get-by-id-contact-mapping" doc:id="3fdfc758-dcc3-4dd3-bc0b-3ff16d898389" >
+		<choice doc:name="Choice" doc:id="113e4873-690b-4e06-97d5-f7f6ebccb6b4" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="Contact mapping" doc:id="709bb287-cdac-47e5-af9c-c790327935cd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"id": payload.Id[0],
+    "firstName": payload.FirstName[0],
+    "lastName": payload.LastName[0],
+    "accountId": payload.AccountId[0]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<set-payload value='#[""]' doc:name="Set Empty Payload" doc:id="9d9bea19-1d87-4ab4-ae57-e995749d9ab4" />
+				<logger level="INFO" doc:name="Log Contact Not Found" doc:id="74612234-49d5-456e-8bd1-cde62c4a1628" message='#["Contact Not Found"]' />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

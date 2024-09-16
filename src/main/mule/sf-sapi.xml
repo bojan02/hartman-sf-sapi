@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <flow name="sf-sapi-main">
+        <http:listener config-ref="sf-sapi-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="sf-sapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="sf-sapi-console">
+        <http:listener config-ref="sf-sapi-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="sf-sapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="delete:\contact\(ID):sf-sapi-config">
+        <flow-ref doc:name="delete-contact-flow" doc:id="4372d1f2-f7e3-4002-abfe-8e06f1b5bab7" name="delete-contact-flow" />
+    </flow>
+    <flow name="delete:\account\(ID):sf-sapi-config">
+        <flow-ref doc:name="delete-account-flow" doc:id="4a2aae52-f8fd-4885-a29e-1ac892e33026" name="delete-account-flow" />
+    </flow>
+    <flow name="get:\account:sf-sapi-config">
+        <flow-ref doc:name="get-accounts-flow" doc:id="8311693b-d7de-4ba1-b817-28fa6d1a4429" name="get-accounts-flow" />
+    </flow>
+    <flow name="get:\contact:sf-sapi-config">
+        <flow-ref doc:name="get-contacts-flow" doc:id="cdce6661-e198-4493-a0ee-7589fed5e3f8" name="get-contacts-flow" />
+    </flow>
+    <flow name="get:\opportunity:sf-sapi-config">
+        <flow-ref doc:name="get-opportunities-flow" doc:id="ad7a1516-ab26-4463-a590-db3b10eba773" name="get-opportunities-flow" />
+    </flow>
+    <flow name="get:\dynaccount\(ID):sf-sapi-config">
+        <flow-ref doc:name="get-account-by-dynamics-id-flow" doc:id="91acf732-2526-4111-b775-5b76cb23c3ff" name="get-account-by-dynamics-id-flow" />
+    </flow>
+    <flow name="get:\opportunity\(ID):sf-sapi-config">
+        <flow-ref doc:name="get-opportunity-by-id-flow" doc:id="e4ca7736-c610-4259-a8ec-84fcf5e84501" name="get-opportunity-by-id-flow" />
+    </flow>
+    <flow name="get:\dyncontact\(ID):sf-sapi-config">
+        <flow-ref doc:name="get-contact-by-dynamics-id-flow" doc:id="37128c44-7333-49de-8e9d-73de5137310a" name="get-contact-by-dynamics-id-flow" />
+    </flow>
+    <flow name="get:\account\(ID):sf-sapi-config">
+        <flow-ref doc:name="get-account-by-id-flow" doc:id="06e305da-f718-46e7-8877-300dd874c796" name="get-account-by-id-flow" />
+    </flow>
+    <flow name="get:\contact\(ID):sf-sapi-config">
+        <flow-ref doc:name="get-contact-by-id-flow" doc:id="3142fd2a-e192-4fc5-8169-189882518185" name="get-contact-by-id-flow" />
+    </flow>
+    <flow name="post:\account:application\json:sf-sapi-config">
+        <flow-ref doc:name="post-account-flow" doc:id="85f0aa6a-8227-4995-9506-ba0ffe061576" name="post-account-flow" />
+    </flow>
+    <flow name="post:\contact:application\json:sf-sapi-config">
+        <flow-ref doc:name="post-contact-flow" doc:id="70da140b-3df1-4c09-8c24-d9c426d9d774" name="post-contact-flow" />
+    </flow>
+</mule>

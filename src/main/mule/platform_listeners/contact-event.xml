@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="contact-post-flow" doc:id="bf47a5f4-deb8-4e7c-9b58-958fa15da2dc" >
+		<salesforce:modified-object-listener objectType="Contact" doc:name="On Modified Object" doc:id="d235d1b9-3bd1-4b9b-9b94-45eb6ea0c70c" config-ref="Salesforce_Config">
+			<scheduling-strategy >
+				<fixed-frequency frequency="20" startDelay="10" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<logger level="INFO" doc:name="Log Contact on modified object started" doc:id="502cff70-9e26-4aaf-a75b-d20f928991da" message='#["Log Contact on modified object started"]' />
+		<set-variable value="#[payload.AccountId]" doc:name="Set vars.sfId" doc:id="abd69d13-f5d3-4143-8be6-641ab2d0c432" variableName="sfId" />
+		<flow-ref doc:name="get-account-by-id-flow" doc:id="a8d1ad78-53e4-406f-b84e-a16a3f954191" name="get-account-by-id-flow" target="account"/>
+		<ee:transform doc:name="Map to CDM" doc:id="bcbd788a-acf2-4571-a0b4-2f534583b564" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"contactSfId": payload.Id,
+	"contactDynId": payload.ExternalId__c,
+	"firstName": payload.FirstName,
+	"lastName": payload.LastName,
+	"accountName": vars.account.accountName,
+	"email": vars.account.email,
+	"phone": vars.account.phone,
+	"customerPriority": vars.account.customerPriority,
+	"slaExpirationDate": vars.account.slaExpirationDate,
+	"active": vars.account.active,
+	"sfId": payload.AccountId,	
+	"dynId": vars.account.dynId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Send to MD API" doc:id="06feaac4-c69d-4306-aaed-095809ce21ea" config-ref="HTTP_Request_configuration" path="/sfcontact" target="dynAccount" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
+	"client_id" : p('secure::clientIdenforcement.clientId')
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Log Contact on modified object ended" doc:id="e3e3597a-5919-4646-8864-a5fdcb8b00c5" message='#["Log Contact on modified object ended"]' />
+	</flow>
+	<flow name="contact-delete-flow" doc:id="18b3e944-0dda-4cbb-8706-348d137d9d56" >
+		<salesforce:deleted-object-listener objectType="Contact" doc:name="On Deleted Object" doc:id="6859a939-028a-4b04-a721-0d4fe4a26cff" config-ref="Salesforce_Config" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="30" startDelay="5" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</salesforce:deleted-object-listener>
+		<logger level="INFO" doc:name="Log Contact on deleted object started" doc:id="a160f174-b181-4745-9502-77716be23022" message='#["Log Contact on deleted object started"]' />
+		<ee:transform doc:name="Map to CDM" doc:id="60edde29-8dbd-4024-81e7-97e4818b6641" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"contactSfId": payload.Id,
+	"contactDynId": payload.ExternalId__c,
+	"firstName": payload.FirstName,
+	"lastName": payload.LastName,
+	"sfId": payload.AccountId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="DELETE" doc:name="Send to MD API" doc:id="0dc91d9c-a015-466a-a881-be8fe99e1622" config-ref="HTTP_Request_configuration" path="/sfcontactdelete" target="dynAccount" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
+	"client_id" : p('secure::clientIdenforcement.clientId')
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Log Contact on deleted object ended" doc:id="bc0b224a-9d04-4836-ab03-ac1a9377fa1e" message='#["Log Contact on deleted object ended"]' />
+	</flow>
+</mule>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-opportunities-flow" doc:id="79cc86e0-3c98-45b0-8b1f-c5723d02894b" >
+		<set-variable value='#["Select Id, Name, AccountId, StageName, Amount, CloseDate from Opportunity"]' doc:name="Set vars.selectDynamicQuery" doc:id="bb7a4968-95e6-44a7-9837-5d9726712314" variableName="selectDynamicQuery"/>
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="44f205b6-1893-40dd-808f-43046caa0ce7" name="get-sf-query-connector-subflow"/>
+		<ee:transform doc:name="Opportunities mapping" doc:id="d0daf8bf-308d-4b76-9bbd-a3f5712f8b97" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (opportunityData, indexOfData) -> {
+	"id": opportunityData.Id,
+    "opportunityName": opportunityData.Name,
+    "accountId": opportunityData.AccountId,
+    "stage": opportunityData.StageName,
+    "amount": opportunityData.Amount,
+    "closeDate": opportunityData.CloseDate
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-opportunity-by-id-flow" doc:id="352199dd-f517-47fe-8e0b-bf5109775c10" >
+		<set-variable value="#[&quot;Select Id, Name, AccountId, StageName, Amount, CloseDate from Opportunity where Id='&quot; ++ attributes.uriParams.'ID' ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="8f5b10b3-b4e2-44ea-9a68-221046845ad5" variableName="selectDynamicQuery"/>
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="e79ba111-5690-4868-ad33-5aa33eb8eb10" name="get-sf-query-connector-subflow" />
+		<choice doc:name="Choice" doc:id="e40c70c1-e01d-4b7a-a2dc-522cf47f9409" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="Opportunity mapping" doc:id="49154fed-66c8-4e1c-b97f-ddbd0a504fd1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"id": payload.Id[0],
+    "opportunityName": payload.Name[0],
+    "accountId": payload.AccountId[0],
+    "stage": payload.StageName[0],
+    "amount": payload.Amount[0],
+    "closeDate": payload.CloseDate[0]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Mapping opportunity not found" doc:id="79492df8-eca4-4148-a2fd-fee8795a37ea" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Opportunity Not Found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

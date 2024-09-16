@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="get-sf-query-connector-subflow" doc:id="748fbb53-a643-401f-8265-5115e7544590">
+		<salesforce:query doc:name="Query" doc:id="cff40086-b2c0-491a-997f-f59589fcc8fc" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[#[vars.selectDynamicQuery]]]></salesforce:salesforce-query>
+		</salesforce:query>
+	</sub-flow>
+	<sub-flow name="post-sf-upsert-connector-subflow" doc:id="af7a5a03-9e83-441f-9c08-1b6161133810">
+		<salesforce:upsert doc:name="Upsert" doc:id="3a71efa0-6b6a-4e38-9018-d66754b2fc10" objectType="#[vars.objectType]" externalIdFieldName="#[vars.externalId]" config-ref="Salesforce_Config">
+			<salesforce:records><![CDATA[#[vars.records]]]></salesforce:records>
+		</salesforce:upsert>
+	</sub-flow>
+	<sub-flow name="delete-sf-connector-subflow" doc:id="67065b53-35a7-4b69-93d5-36cbdbf99985" >
+		<salesforce:delete doc:name="Delete" doc:id="dd2f0368-ce52-4924-99ff-43a9fadd30ad" config-ref="Salesforce_Config" >
+			<salesforce:ids ><![CDATA[#[vars.records]]]></salesforce:ids>
+		</salesforce:delete>
+	</sub-flow>
+</mule>

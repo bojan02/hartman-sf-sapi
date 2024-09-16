@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<flow name="account-post-flow" doc:id="7ab8400a-6b2a-4bc8-adcf-76743de06ccf">
+		<salesforce:modified-object-listener doc:name="On Modified Object" doc:id="e5e3e65f-f3df-4edd-a6fd-8bf24ef847c1" config-ref="Salesforce_Config" objectType="Account">
+			<scheduling-strategy>
+				<fixed-frequency frequency="20" timeUnit="SECONDS" startDelay="10" />
+			</scheduling-strategy>
+		</salesforce:modified-object-listener>
+		<logger level="INFO" doc:name="Log Account on modified object started" doc:id="534b195b-fd68-490b-a0f2-72e8a8fd0bbc" message='#["Log Account on modified object started"]' />
+		<ee:transform doc:name="Map to CDM" doc:id="48043e65-180b-4453-bf32-8f040fe332bb">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "accountName": payload.Name,
+  "email": payload.Email__c,
+  "phone": payload.Phone,
+  "customerPriority": payload.CustomerPriority__c default "Medium",
+  "slaExpirationDate": payload.SLAExpirationDate__c default (now() + |P90D|) as Date{"format": "yyyy-MM-dd"},
+  "active": payload.Active__c default "Yes",
+  "sfId": payload.Id,
+  "dynId": payload.ExternalId__c
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="c9a94318-c88b-4c06-814e-bfb94af2e9f9">
+			<when expression='#[payload.active == "No"]'>
+				<logger level="INFO" doc:name="Log Account is not active" doc:id="20bc1cec-fd59-4598-9281-768851a260a8" message='#["Active is set to No, Account is not synced with Dynamics"]' />
+			</when>
+			<otherwise>
+				<http:request method="POST" doc:name="Send to MD API" doc:id="bb5cfa64-bffa-4505-bb0a-081eda5205af" config-ref="HTTP_Request_configuration" path="/sfaccount" target="dynAccount">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
+	"client_id" : p('secure::clientIdenforcement.clientId')
+}]]]></http:headers>
+		</http:request>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Log Account on modified object ended" doc:id="e5ed7e20-efd0-402f-af65-3988ad2e32ce" message='#["Log Account on modified object ended"]' />
+	</flow>
+	<flow name="account-delete-flow" doc:id="b8531e4c-5139-49d7-b05e-37775c8eea0a" >
+		<salesforce:deleted-object-listener doc:name="On Deleted Object" doc:id="fcd46d8a-5cfb-43fe-9653-89db2ee51353" config-ref="Salesforce_Config" objectType="Account">
+			<scheduling-strategy >
+				<fixed-frequency frequency="30" startDelay="5" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</salesforce:deleted-object-listener>
+		<logger level="INFO" doc:name="Log Account on deleted object started" doc:id="d33519ed-4fbe-433c-8586-5d836479f05e" message='#["Log Account on deleted object started"]' />
+		<ee:transform doc:name="Map to CDM" doc:id="fe8bfa90-ddc3-492c-833e-84c8a8e749af">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "accountName": payload.Name,
+  "email": payload.Email__c,
+  "phone": payload.Phone,
+  "customerPriority": payload.CustomerPriority__c,
+  "slaExpirationDate": payload.SLAExpirationDate__c,
+  "active": payload.Active__c,
+  "sfId": payload.Id,
+  "dynId": payload.ExternalId__c
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="DELETE" doc:name="Send to MD API" doc:id="1ce5abd8-9ed1-4517-94a9-96b42965c644" config-ref="HTTP_Request_configuration" path="/sfaccountdelete" target="dynAccount" >
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
+	"client_id" : p('secure::clientIdenforcement.clientId')
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Log Account on deleted object ended" doc:id="93053ea2-9b31-4323-8c86-c5b88208a90c" message='#["Log Account on deleted object ended"]' />
+	</flow>
+</mule>

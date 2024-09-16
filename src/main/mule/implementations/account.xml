@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-accounts-flow" doc:id="fe1d6cc3-c531-4b81-81dc-2ddf1ef878ba" >
+		<set-variable value="#[attributes.queryParams.accountName]" doc:name="Set vars.accountName" doc:id="447f2e18-f1b1-45fa-949b-dba1675b0302" variableName="accountName" />
+		<choice doc:name="Choice" doc:id="6e6b6c6e-ba2a-467e-b619-0a350956e0c5">
+			<when expression="#[!isEmpty(vars.accountName)]">
+				<flow-ref doc:name="get-account-by-name" doc:id="635a56b6-2a50-4e58-b946-2d3c58a96fc3" name="get-account-by-name" />
+			</when>
+			<otherwise>
+				<set-variable value='#["SELECT Id, Name, Email__c, Phone, CustomerPriority__c, SLAExpirationDate__c, Active__c, ExternalId__c from Account"]' doc:name="Set vars.selectDynamicQuery" doc:id="c76e2f5d-cc73-4a89-ac26-985a53be5e47" variableName="selectDynamicQuery" />
+				<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="5b01344c-c79f-4864-855b-9dcc8c05fd2d" name="get-sf-query-connector-subflow" />
+				<ee:transform doc:name="Accounts mapping" doc:id="16821f0a-e837-45b5-95cc-b509ea2d859b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map (accountData, indexOfData) -> {
+	"id": accountData.Id,
+    "accountName": accountData.Name,
+    "email": accountData.Email__c,
+    "phone": accountData.Phone,
+    "customerPriority": accountData.CustomerPriority__c,
+    "slaExpirationDate": accountData.SLAExpirationDate__c,
+    "active": accountData.Active__c,
+    "externalId": accountData.ExternalId__c
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="get-account-by-id-flow" doc:id="cdaac85a-0793-41a6-bc8b-388a2c2cd0ec" >
+		<ee:transform doc:name="Set vars.sfId" doc:id="783e0131-1cec-42c9-bf3b-83efc987eb48" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sfId" ><![CDATA[%dw 2.0
+output application/java
+---
+if(attributes.uriParams.'ID' != null)(
+	attributes.uriParams.'ID'
+)else(
+	vars.sfId
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[&quot;SELECT Id, Name, Email__c, Phone, CustomerPriority__c, SLAExpirationDate__c, Active__c, ExternalId__c from Account where Id='&quot; ++ vars.sfId ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="2b7a64de-3b50-4115-8a40-74f834997dc8" variableName="selectDynamicQuery"/>
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="1777a700-efff-44f3-9df5-975b01b93441" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-account-mapping" doc:id="e42488c9-d904-4f51-8c21-f1f12faacb2c" name="get-by-account-mapping" />
+	</flow>
+	<flow name="get-account-by-name" doc:id="6e35e93d-c877-41c4-8b9c-baec9ecd26e2">
+		<set-variable value="#[&quot;SELECT Id, Name, Email__c, Phone, CustomerPriority__c, SLAExpirationDate__c, Active__c, ExternalId__c from Account where Name='&quot; ++ vars.accountName ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="6b4e82f0-3af4-4240-b877-9d608a8e3df9" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="233162da-5fcd-462d-89e0-cebcb350d36b" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-account-mapping" doc:id="d71d320b-8f3e-4d74-97ab-285816f5a898" name="get-by-account-mapping" />
+	</flow>
+	<flow name="get-account-by-dynamics-id-flow" doc:id="e3728287-f853-47ce-9998-e06b59b4547e">
+		<set-variable value="#[&quot;Select Id, Name, Email__c, Phone, CustomerPriority__c, SLAExpirationDate__c, Active__c, ExternalId__c from Account where ExternalId__c='&quot; ++ attributes.uriParams.'ID' ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="0ddb43d9-48ac-4783-9b9a-68205a03a71b" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="41ff4359-8758-4311-8f9a-55022211c5cb" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-account-mapping" doc:id="ba727eb2-c490-40bd-a25f-8ae5cf52fecf" name="get-by-account-mapping" />
+	</flow>
+	<flow name="post-account-flow" doc:id="41050b10-688c-4d13-8c4a-41c11c8ed941" >
+		<logger level="INFO" doc:name="Log upsert start " doc:id="684e0d63-865f-4f32-8d73-2154f4b77886" message='#["Upsert flow started"]'/>
+		<ee:transform doc:name="Account mapping" doc:id="65e152ad-5e97-48fc-96c3-d21e7f868d3a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	"Id": payload.Id,
+    "Name": payload.Name,
+	"Email__c": payload.Email__c,
+	"Phone": payload.Phone,
+	"CustomerPriority__c": payload.CustomerPriority__c,
+	"SLAExpirationDate__c": payload.SLAExpirationDate__c as Date,
+	"Active__c": payload.Active__c,
+	"ExternalId__c": payload.ExternalId__c
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Set upsert vars" doc:id="6c8916e8-5b98-49bb-9679-c78af6504729">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="objectType"><![CDATA["Account"]]></ee:set-variable>
+				<ee:set-variable variableName="externalId"><![CDATA["Id"]]></ee:set-variable>
+				<ee:set-variable variableName="records"><![CDATA[payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="post-sf-upsert-connector-subflow" doc:id="ae5b164c-b5e2-4a3e-aa6a-facc01355ffb" name="post-sf-upsert-connector-subflow" target="account"/>
+		<ee:transform doc:name="Account mapping message" doc:id="694a903a-6d70-43a4-ab01-21ab0696008e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"accountName": payload.Name[0],
+	"email": payload.Email__c[0],
+	"phone": payload.Phone[0],
+	"customerPriority": payload.CustomerPriority__c[0],
+	"slaExpirationDate": payload.SLAExpirationDate__c[0],
+	"active": payload.Active__c[0],
+	"sfId": vars.account.items[0].id,
+	"dynId": payload.ExternalId__c[0]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log upsert end " doc:id="6a2c5f69-ec1c-4164-9daa-08b05e0a5800" message='#["Upsert flow ended"]' />
+	</flow>
+	<flow name="delete-account-flow" doc:id="48b99eae-631b-4abc-a088-19adb55d9a06">
+		<logger level="INFO" doc:name="Log delete start" doc:id="3e878d88-013c-4b82-970f-5221c3d78de9" message='#["Delete flow started"]' />
+		<ee:transform doc:name="Account mapping" doc:id="4c0eb544-2564-4ca1-8e03-460cb3b7a7ef">
+					<ee:message>
+					</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="records" ><![CDATA[%dw 2.0
+output application/java
+---
+[attributes.uriParams.'ID']]]></ee:set-variable>
+			</ee:variables>
+				</ee:transform>
+		<flow-ref doc:name="delete-sf-connector-subflow" doc:id="4e0f0ee3-87cd-4697-921c-a726d9697ed2" name="delete-sf-connector-subflow" />
+		<logger level="INFO" doc:name="Log delete end " doc:id="cb0169cd-2b72-4f46-ba49-2021eed625cf" message='#["Delete flow ended"]'/>
+	</flow>
+	<sub-flow name="get-by-account-mapping" doc:id="589156ad-f695-4232-a66e-46bbb6bc41d4" >
+		<choice doc:name="Choice" doc:id="e86fa9b8-1b1c-4bc9-ab7b-efa00b526603" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="Account mapping" doc:id="43dbffcf-f48a-4ade-83bd-5c5c93d29be4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"accountName": payload.Name[0],
+	"email": payload.Email__c[0],
+	"phone": payload.Phone[0],
+	"customerPriority": payload.CustomerPriority__c[0],
+	"slaExpirationDate": payload.SLAExpirationDate__c[0],
+	"active": payload.Active__c[0],
+	"sfId": payload.Id[0],
+	"dynId": payload.ExternalId__c[0]
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<set-payload value='#[""]' doc:name="Set Empty Payload" doc:id="e2b6231f-4469-4cc7-8fb7-24717ccdce45" />
+				<logger level="INFO" doc:name="Log Account Not Found" doc:id="7e1f0a5b-eae2-4ccc-abef-3fac9ab84020" message='#["Account Not Found"]' />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

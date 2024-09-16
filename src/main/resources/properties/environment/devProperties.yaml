@@ -1,0 +1,18 @@
+api:
+  id: '0000'
+
+environment:
+  logging:
+    level: 'DEBUG'
+
+https:
+  port: '8081'
+  
+httpsreq:
+  path: '/api'
+  host: 'masterdata-papi.us-e2.cloudhub.io'
+  port: '443'
+  
+keystore:
+  path: 'sapidatabase.jks'
+  alias: 'mule'

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:njams="http://www.mulesoft.org/schema/mule/njams" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/njams http://www.mulesoft.org/schema/mule/njams/current/mule-njams.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <apikit:config name="sf-sapi-config" api="resource::ea182e55-d784-4f74-9336-f94ee0189000:sf-sapi:1.0.1:raml:zip:sf-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:listener-config name="sf-sapi-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
+            <tls:context>
+                <tls:trust-store insecure="true" />
+                <tls:key-store type="jks" path="${keystore.path}" alias="${keystore.alias}" keyPassword="${secure::certificate.keypassword}" password="${secure::certificate.keypassword}" />
+            </tls:context>
+        </http:listener-connection>
+    </http:listener-config>
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="3c121c72-d0a9-4b99-ad4c-46acefe57e44" basePath="${httpsreq.path}" responseTimeout="3000000">
+        <http:request-connection protocol="HTTPS" host="${httpsreq.host}" port="${httpsreq.port}">
+            <tls:context>
+                <tls:trust-store insecure="true" />
+                <tls:key-store type="jks" path="${keystore.path}" alias="${keystore.alias}" keyPassword="${secure::certificate.keypassword}" password="${secure::certificate.keypassword}" />
+            </tls:context>
+        </http:request-connection>
+    </http:request-config>
+    <configuration-properties doc:name="API Properties" doc:id="12b9d91d-d82a-4a9e-89a8-7d9a2afa38d1" file="properties/apiProperties.yaml" />
+    <configuration-properties doc:name="Generated Maven Properties" doc:id="12b9d91d-d82a-4a9e-89a8-7d9a2afa38d1" file="properties/generatedProperties.yaml" />
+    <configuration-properties doc:name="Environment properties" doc:id="2a5a8ef5-06ca-40dc-a2c9-7daadd7d0b45" file="properties/environment/${mule.env}Properties.yaml" />
+    <global-property doc:name="Global Property" doc:id="a049c954-10eb-4fd4-bf9e-eb7e59c21e54" name="mule.env" value="local" />
+    <configuration doc:name="Global Error Handler Configuration" doc:id="debb8bec-9ca7-452e-afb3-badc3f2df3ab" defaultErrorHandler-ref="globalErrorHandler" />
+    <configuration-properties doc:name="Log properties" doc:id="49af3598-2447-4b30-9b55-b9b934b5abef" file="properties/logProperties.yaml" />
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="3db43710-c191-4241-8cc5-7ead57bbc11b" file="properties/environment/${mule.env}SecureProperties.yaml" key="${mule.key}" />
+    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="0fb534d9-aab2-49fb-9a5a-2115558415ae">
+        <salesforce:basic-connection username="${secure::salesforceConfig.email}" password="${secure::salesforceConfig.password}" securityToken="${secure::salesforceConfig.token}" />
+    </salesforce:sfdc-config>
+    <api-gateway:autodiscovery apiId="19891674" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="618c4d88-3351-4aba-9ee5-9eaf142b3538" flowRef="sf-sapi-main" />
+</mule>
