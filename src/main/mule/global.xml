@@ -27,5 +27,5 @@
     <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="0fb534d9-aab2-49fb-9a5a-2115558415ae">
         <salesforce:basic-connection username="${secure::salesforceConfig.email}" password="${secure::salesforceConfig.password}" securityToken="${secure::salesforceConfig.token}" />
     </salesforce:sfdc-config>
-    <api-gateway:autodiscovery apiId="19891674" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="618c4d88-3351-4aba-9ee5-9eaf142b3538" flowRef="sf-sapi-main" />
+    <api-gateway:autodiscovery apiId="${secure::apiDiscovery.apiId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="618c4d88-3351-4aba-9ee5-9eaf142b3538" flowRef="sf-sapi-main" />
 </mule>

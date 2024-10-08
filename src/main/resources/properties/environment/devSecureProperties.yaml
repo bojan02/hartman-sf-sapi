@@ -10,3 +10,6 @@ salesforceConfig:
   email: '![nzjVPRJXdRprvH9JHs8yYlXFDEeCknFqm9lub45PX6c=]'
   password: '![5CCqmVDWaxcnugJcZBjB2A==]'
   token: '![SWRCjGUlgD4T3v9wVkCf1wzfyWeuDqWY1vKJAM60814=]'
+  
+apiDiscovery:
+  apiId: '![wslCqRt1yR1FPrRP1QiXAQ==]'
