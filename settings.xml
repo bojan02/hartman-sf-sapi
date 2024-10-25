@@ -1,22 +1,10 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-	<pluginGroups>
-    <!-- pluginGroup
-     | Specifies a further group identifier to use for plugin lookup.
-    <pluginGroup>com.your.plugins</pluginGroup>
-    -->
-	<pluginGroup>org.mule.tools</pluginGroup>
-  </pluginGroups>
     <servers>
         <server>
             <id>anypoint-exchange-v2</id>
             <username>${maven.anypoint-exchange-v2.username}</username>
             <password>${maven.anypoint-exchange-v2.password}</password>
-        </server>
-		<server>
-            <id>anypoint-exchange-v3</id>
-            <username>bpuvaca02</username>
-            <password>Krejzi.2002.</password>
         </server>
         <server>
             <id>MuleRepository</id>
@@ -45,26 +33,6 @@
                     </snapshots>
                 </repository>
             </repositories>
-        </profile>
-		 <profile>
-            <id>mulesoft-repositories</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>mulesoft-public</id>
-                    <name>MuleSoft Public Repository</name>
-                    <url>https://repository.mulesoft.org/nexus/content/repositories/public</url>
-                    <layout>default</layout>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>mulesoft-public</id>
-                    <url>https://repository.mulesoft.org/nexus/content/repositories/public</url>
-                </pluginRepository>
-            </pluginRepositories>
         </profile>
     </profiles>
 </settings>
