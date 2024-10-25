@@ -6,6 +6,11 @@
             <username>${maven.anypoint-exchange-v2.username}</username>
             <password>${maven.anypoint-exchange-v2.password}</password>
         </server>
+		<server>
+            <id>anypoint-exchange-v3</id>
+            <username>bpuvaca02</username>
+            <password>Krejzi.2002.</password>
+        </server>
         <server>
             <id>MuleRepository</id>
             <username>${maven.mule-ee-repository.username}</username>
