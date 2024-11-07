@@ -28,4 +28,11 @@
         <salesforce:basic-connection username="${secure::salesforceConfig.email}" password="${secure::salesforceConfig.password}" securityToken="${secure::salesforceConfig.token}" />
     </salesforce:sfdc-config>
     <api-gateway:autodiscovery apiId="${secure::apiDiscovery.apiId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="618c4d88-3351-4aba-9ee5-9eaf142b3538" flowRef="sf-sapi-main" />
+	<njams:inline-configuration-config name="NJAMS_Inline_configuration" doc:name="NJAMS Inline configuration" doc:id="c47e0e69-2c38-4210-a805-541622ed52e4" deployment="sf-sapi" appName="1.0.0" >
+		<njams:communication-protocol >
+			<njams:http-instance host="os0146" port="8080" path="njams" dataProviderPrefix="sdk" >
+				<njams:authentication user="admin" password="admin" />
+			</njams:http-instance>
+		</njams:communication-protocol>
+	</njams:inline-configuration-config>
 </mule>

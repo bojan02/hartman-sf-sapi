@@ -9,18 +9,16 @@
 
 	<name>sf-sapi</name>
 	<parent>
-        <groupId>b2364939-ddcb-4a64-a2ca-16799a22819a</groupId>
-        <artifactId>parent-pom</artifactId>
-        <version>1.0.0</version>
-    </parent>
-	
-
+		<groupId>b2364939-ddcb-4a64-a2ca-16799a22819a</groupId>
+		<artifactId>parent-pom</artifactId>
+		<version>1.0.9</version>
+	</parent>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<app.runtime>4.4.0</app.runtime>
-		<mule.maven.plugin.version>4.1.0</mule.maven.plugin.version>
+		<app.runtime>4.7.4</app.runtime>
+		<mule.maven.plugin.version>4.3.1</mule.maven.plugin.version>
 		<app.name>sf-sapi-bp</app.name>
 		<env>Sandbox</env>
 		<munit.version>2.3.11</munit.version>
@@ -49,20 +47,13 @@
 		</resources>
 		<plugins>
 
-
-
-
-
-
-
-
 			<plugin>
 				<groupId>org.mule.tools.maven</groupId>
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-					<cloudHubDeployment>																										            
+					<cloudHubDeployment>																																																		            
 						<uri>https://anypoint.mulesoft.com</uri>
 						<muleVersion>${app.runtime}</muleVersion>
 						<username>${anypoint.username}</username>
@@ -80,10 +71,27 @@
 						</properties>
 					</cloudHubDeployment>
 					<classifier>mule-application</classifier>
+					<sharedLibraries>
+						<sharedLibrary>
+							<groupId>com.faizsiegeln.njams</groupId>
+							<artifactId>njams-client-mule4</artifactId>
+						</sharedLibrary>
+						<sharedLibrary>
+							<groupId>org.apache.activemq</groupId>
+							<artifactId>activemq-client</artifactId>
+						</sharedLibrary>
+					</sharedLibraries>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>integrationmatters-repo-release</id>
+			<url>https://maven.integrationmatters.com/release</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<dependency>
@@ -98,6 +106,22 @@
 			<version>1.0.0</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
+		</dependency>
+		<dependency>
+			<groupId>com.faizsiegeln.njams</groupId>
+			<artifactId>njams-client-mule4-extension</artifactId>
+			<version>5.0.0</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.faizsiegeln.njams</groupId>
+			<artifactId>njams-client-mule4</artifactId>
+			<version>5.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-client</artifactId>
+			<version>5.18.5</version>
 		</dependency>
 	</dependencies>
 </project>
