@@ -2,23 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>b2364939-ddcb-4a64-a2ca-16799a22819a</groupId>
+	<groupId>43a45f61-92d2-4c3e-8bcf-a0ba6d792d89</groupId>
 	<artifactId>sf-sapi</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-application</packaging>
 
-	<name>sf-sapi</name>
+	<name>hartman-sf-sapi</name>
 	<parent>
-		<groupId>b2364939-ddcb-4a64-a2ca-16799a22819a</groupId>
+		<groupId>43a45f61-92d2-4c3e-8bcf-a0ba6d792d89</groupId>
 		<artifactId>parent-pom</artifactId>
-		<version>1.0.9</version>
+		<version>1.0.0</version>
 	</parent>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
 		<app.runtime>4.7.4</app.runtime>
-		<mule.maven.plugin.version>4.3.1</mule.maven.plugin.version>
+		<mule.maven.plugin.version>4.3.0</mule.maven.plugin.version>
 		<app.name>sf-sapi-bp</app.name>
 		<env>Sandbox</env>
 		<munit.version>2.3.11</munit.version>
@@ -53,7 +53,7 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-					<cloudHubDeployment>																																																		            
+					<cloudHubDeployment>
 						<uri>https://anypoint.mulesoft.com</uri>
 						<muleVersion>${app.runtime}</muleVersion>
 						<username>${anypoint.username}</username>
@@ -91,6 +91,12 @@
 			<id>integrationmatters-repo-release</id>
 			<url>https://maven.integrationmatters.com/release</url>
 		</repository>
+		<repository>
+			<id>anypoint-exchange-v3</id>
+			<name>Anypoint Exchange V3</name>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/maven</url>
+			<layout>default</layout>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -99,13 +105,6 @@
 			<artifactId>mule-salesforce-connector</artifactId>
 			<version>10.20.0</version>
 			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>b2364939-ddcb-4a64-a2ca-16799a22819a</groupId>
-			<artifactId>sf-sapi</artifactId>
-			<version>1.0.0</version>
-			<classifier>raml</classifier>
-			<type>zip</type>
 		</dependency>
 		<dependency>
 			<groupId>com.faizsiegeln.njams</groupId>
@@ -122,6 +121,25 @@
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-client</artifactId>
 			<version>5.18.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-file-connector</artifactId>
+			<version>1.5.2</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-ftp-connector</artifactId>
+			<version>2.0.0</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>43a45f61-92d2-4c3e-8bcf-a0ba6d792d89</groupId>
+			<artifactId>sf-sapi</artifactId>
+			<version>1.0.4</version>
+			<classifier>raml</classifier>
+			<type>zip</type>
 		</dependency>
 	</dependencies>
 </project>

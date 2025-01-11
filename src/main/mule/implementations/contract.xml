@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-contract-by-accountId-flow" doc:id="8c525ae2-19d8-4b72-87e1-7b6ed21448bf">
+		<ee:transform doc:name="Set vars.accountId" doc:id="e4c30471-afe5-4df1-bdae-88602c8d5376">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="accountId"><![CDATA[%dw 2.0
+output application/java
+---
+if(attributes.uriParams.'ID' != null)(
+	attributes.uriParams.'ID'
+)else(
+	vars.accountId
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[&quot;SELECT Id, AccountId, Status, StartDate, ContractTerm from Contract where AccountId='&quot; ++ vars.accountId ++ &quot;'&quot;]" doc:name="Set vars.selectDynamicQuery" doc:id="3809e178-7457-481f-8dc7-c69bff983247" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="6daa263a-95d2-4525-bde4-f3a235d91a58" name="get-sf-query-connector-subflow" />
+		<flow-ref doc:name="get-by-contract-mapping" doc:id="4bb36106-d483-46c5-a5a7-0ab62c8c3d47" name="get-by-contract-mapping" />
+	</flow>
+	<flow name="post-contract-flow" doc:id="b7e565f9-8dc2-4dc0-bc04-875d7793f67b" >
+		<ee:transform doc:name="Create Contract mapping" doc:id="0aff26c5-9c9b-4a37-8d93-5f516b7d4ac4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	"AccountId": payload.accountId,
+	"Status": payload.status,
+	"StartDate": payload.orderStartDate as Date,
+	"ContractTerm": 12 as Number,
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Set upsert vars" doc:id="cc3176f1-8fce-4b22-b2cc-1a51e3d53a16" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="objectType" ><![CDATA["Contract"]]></ee:set-variable>
+				<ee:set-variable variableName="externalId" ><![CDATA["Id"]]></ee:set-variable>
+				<ee:set-variable variableName="records" ><![CDATA[payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="post-sf-upsert-connector-subflow" doc:id="32a0f5e6-a228-4e34-8b3f-40c400646a43" name="post-sf-upsert-connector-subflow" target="contract" />
+	</flow>
+	<sub-flow name="get-by-contract-mapping" doc:id="4ee2dfd9-fa56-45aa-919f-02db353b4ab6" >
+		<choice doc:name="Choice" doc:id="64219b3d-c384-469b-bf5f-aa281d370344" >
+			<when expression="#[!isEmpty(payload)]" >
+				<ee:transform doc:name="Contract mapping" doc:id="4bea83e5-9a52-4e95-af6d-77a62fd15fae" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"id": payload.Id[0],
+	"accountId": payload.AccountId[0],
+	"status": payload.Status[0],
+	"contractStartDate": payload.StartDate[0],
+	"contractTerm": payload.ContractTerm[0],
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<set-payload value='#[""]' doc:name="Set Empty Payload" doc:id="6820201d-78a7-4b67-94a4-4cab2e1d9e85" />
+				<logger level="INFO" doc:name="Log Contract Not Found" doc:id="fa92706f-0099-41fb-9216-7733f1fdf507" message='#["Contract Not Found"]' />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

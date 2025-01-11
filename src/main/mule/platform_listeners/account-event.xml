@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 	<flow name="account-post-flow" doc:id="7ab8400a-6b2a-4bc8-adcf-76743de06ccf">
 		<salesforce:modified-object-listener doc:name="On Modified Object" doc:id="e5e3e65f-f3df-4edd-a6fd-8bf24ef847c1" config-ref="Salesforce_Config" objectType="Account">
 			<scheduling-strategy>
-				<fixed-frequency frequency="20" timeUnit="SECONDS" startDelay="10" />
+				<fixed-frequency timeUnit="SECONDS" frequency="30"/>
 			</scheduling-strategy>
 		</salesforce:modified-object-listener>
 		<logger level="INFO" doc:name="Log Account on modified object started" doc:id="534b195b-fd68-490b-a0f2-72e8a8fd0bbc" message='#["Log Account on modified object started"]' />
@@ -31,19 +31,21 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<choice doc:name="Choice" doc:id="c9a94318-c88b-4c06-814e-bfb94af2e9f9">
+		<choice doc:name="Choice" doc:id="65b02195-5a8e-4ef4-b82c-5b9cbc5419d0">
 			<when expression='#[payload.active == "No"]'>
-				<logger level="INFO" doc:name="Log Account is not active" doc:id="20bc1cec-fd59-4598-9281-768851a260a8" message='#["Active is set to No, Account is not synced with Dynamics"]' />
+				<logger level="INFO" doc:name="Log Account is not active" doc:id="a3e9b9dd-89f6-4754-8e9f-24f046b8c25e" message='#["Active is set to No, Account is not synced with Dynamics"]' />
 			</when>
 			<otherwise>
-				<http:request method="POST" doc:name="Send to MD API" doc:id="bb5cfa64-bffa-4505-bb0a-081eda5205af" config-ref="HTTP_Request_configuration" path="/sfaccount" target="dynAccount">
-			<http:headers><![CDATA[#[output application/java
+				<until-successful maxRetries="5" doc:name="Until Successful" doc:id="32b993be-da76-42a1-b71f-8e59713a351d" >
+					<http:request method="POST" doc:name="Send to MD API" doc:id="548f1a8c-139b-4267-836d-26752dfc790d" config-ref="HTTP_Request_configuration" path="/sfaccount" target="dynAccount">
+					<http:headers><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : p('secure::clientIdenforcement.clientSecret'),
 	"client_id" : p('secure::clientIdenforcement.clientId')
 }]]]></http:headers>
-		</http:request>
+				</http:request>
+				</until-successful>
 			</otherwise>
 		</choice>
 		<logger level="INFO" doc:name="Log Account on modified object ended" doc:id="e5ed7e20-efd0-402f-af65-3988ad2e32ce" message='#["Log Account on modified object ended"]' />

@@ -3,13 +3,13 @@ certificate:
   password: '![Ymlc260Y7q/sDOeYQzXwqw==]'
   
 clientIdenforcement:
-  clientId: '![kVEqE7Qr86XoHlJGLU0UtIRA9LI3qFMvEd63SK4e3WCBf2jFgdY3tdQ892QJSpg4]'
-  clientSecret: '![DOPO0ZtBPjmlBul7P5BzYT4+mBPKFbiBFhOTJcNhunfvZ+aHOCv+4HiD5oUOsylN]'
+  clientId: '![xItuf3g6MK2zCxRNv2cCo9IRG9NmedKX+cXdt1jhUS3DXN9YZgmGaM605rQT1mkG]'
+  clientSecret: '![Ip/i8EdTY4GNJqpgMyhV6+RMcHqJpxz5kzhhfjo9xqNAE/KYsPfpTf+BgHqmrH8W]'
   
 salesforceConfig:
-  email: '![nzjVPRJXdRprvH9JHs8yYlXFDEeCknFqm9lub45PX6c=]'
+  email: '![A0f4y5qLeOGACHwsedyb3YhNqsHv9LMkOtx/XH53xFQ=]'
   password: '![faqBLLWrL83hXf3ws4W4SQ==]'
-  token: '![yYrWHoWEMW1phIZ7sSv4sZnxQ+Rjfu5e+IIXkhtbE+U=]'
+  token: '![ecDUICzm8wxqsU8uqXz1Z6qZG2wKiUzfShkamF335RI=]'
   
 apiDiscovery:
-  apiId: '![glgCW0AB+X/LvmGp8YkkTw==]'
+  apiId: '![ateDswCvPvuXtGw+y9RbXw==]'

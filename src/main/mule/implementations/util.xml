@@ -20,4 +20,57 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			<salesforce:ids ><![CDATA[#[vars.records]]]></salesforce:ids>
 		</salesforce:delete>
 	</sub-flow>
+	<flow name="query-call-retrieve-data-flow" doc:id="cd1e246c-1d06-46cb-b58b-f4894dfd65b8" >
+		<set-variable value="#[payload.query]" doc:name="Set vars.selectDynamicQuery" doc:id="58f16f78-506c-4683-b3ee-e6b5520f8a7d" variableName="selectDynamicQuery" />
+		<flow-ref doc:name="get-sf-query-connector-subflow" doc:id="b4b463f7-70cc-4bfe-8378-82a84683ecf0" name="get-sf-query-connector-subflow" />
+		<ee:transform doc:name="Map to JSON" doc:id="4b95f4e6-ed76-4b67-8fea-791e016fd1db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+		<flow name="post-pagination-flow" doc:id="36d30df3-b491-497b-b608-4279f636be99">
+		<salesforce:create-job-bulk-api-v2 doc:name="Create job bulk api v 2" doc:id="4550c534-6159-4fc1-8ad0-8a587fe2afce" config-ref="Salesforce_Config" objectType="#[vars.sfObjectType]" operation="#[vars.operation]" lineEnding="CRLF" externalIdFieldName="#[vars.externalIdField]" />
+		<set-variable value="#[payload.id]" doc:name="Set vars.jobId" doc:id="75125f7e-535f-4ea3-be29-5201c6000fde" variableName="jobId" />
+		<until-successful maxRetries="5" doc:name="Until Successful" doc:id="7f748022-3db5-4d90-a753-5eef1a294876" >
+			<logger level="INFO" doc:name="Log new Try" doc:id="130448dd-584c-43a0-97d8-3afcff4fb6d4" message="'Runs... '"/>
+			<salesforce:retrieve-job-unprocessed-results-bulk-v2 doc:name="Retrieve job unprocessed results bulk v 2" doc:id="6f1771d4-39d7-4dbd-9195-d0e85f500d7b" config-ref="Salesforce_Config" id="#[vars.jobId]" target="unprocessed"/>
+			<salesforce:retrieve-job-failed-results-bulk-v2 doc:name="Retrieve job failed results bulk v 2" doc:id="692d38f7-eaba-48a5-803c-2bfea9db2f1c" config-ref="Salesforce_Config" id="#[vars.jobId]" target="failed"/>
+			<salesforce:retrieve-job-successful-results-bulk-v2 doc:name="Retrieve job successful results bulk v 2" doc:id="4fc6bb2e-7e4f-4b9e-a545-b7772fc5c3b3" config-ref="Salesforce_Config" id="#[vars.jobId]" target="success"/>
+		</until-successful>
+		<ee:transform doc:name="Map Results" doc:id="f9aa2dff-d176-437e-a2b8-d2e17b26f152" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+((vars.success default [])
+++
+(vars.failed default [])
+++
+(vars.unprocessed default [])) map ((item, index) -> {
+  success: (not item.errorMessage?),
+  timestamp: now(),
+  description: if(item.errorMessage?) item.errorMessage else "success",
+  id: item.id
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Bulk Results" doc:id="e79cff83-4f59-4742-92f7-94ffdbb318d1" message="#[payload]"/>
+		<!-- [STUDIO:"Get all jobs bulk api v 2"]<salesforce:get-all-jobs-bulk-api-v2 doc:name="Get all jobs bulk api v 2" doc:id="b81c3ca3-b9a8-43c8-94dc-5a9414e0d2c4" config-ref="Salesforce_Config"/> [STUDIO] -->
+		<!-- [STUDIO:"Get query job info bulk api v 2"]<salesforce:get-query-job-info-bulk-api-v2 doc:name="Get query job info bulk api v 2" doc:id="093fb681-457d-42ef-b6b2-35f143a64055" config-ref="Salesforce_Config" id="#[payload.id[0 to sizeOf(payload.id)-4&#93;&#93;"/> [STUDIO] -->
+	</flow>
+	<flow name="get-bulk-job-flow" doc:id="bb2aed29-3185-4a36-8cac-4c5da4408de4" >
+		<salesforce:get-job-state-bulk-api-v2 doc:name="Get job state bulk api v 2" doc:id="0d2c2a47-390f-4025-85a2-f8ffed7a2048" config-ref="Salesforce_Config" id="#[payload.Id]"/>
+		<ee:transform doc:name="Map to JSON" doc:id="73c0548d-410a-4a25-97c8-ed043061fc23" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 </mule>

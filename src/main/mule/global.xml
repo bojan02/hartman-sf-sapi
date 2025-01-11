@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:njams="http://www.mulesoft.org/schema/mule/njams" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/njams http://www.mulesoft.org/schema/mule/njams/current/mule-njams.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
-    <apikit:config name="sf-sapi-config" api="resource::b2364939-ddcb-4a64-a2ca-16799a22819a:sf-sapi:1.0.0:raml:zip:sf-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="sf-sapi-config" api="resource::43a45f61-92d2-4c3e-8bcf-a0ba6d792d89:sf-sapi:1.0.4:raml:zip:sf-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <http:listener-config name="sf-sapi-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
             <tls:context>
@@ -9,7 +9,7 @@
             </tls:context>
         </http:listener-connection>
     </http:listener-config>
-    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="3c121c72-d0a9-4b99-ad4c-46acefe57e44" basePath="${httpsreq.path}" responseTimeout="3000000">
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="3c121c72-d0a9-4b99-ad4c-46acefe57e44" basePath="${httpsreq.path}">
         <http:request-connection protocol="HTTPS" host="${httpsreq.host}" port="${httpsreq.port}">
             <tls:context>
                 <tls:trust-store insecure="true" />
@@ -28,11 +28,4 @@
         <salesforce:basic-connection username="${secure::salesforceConfig.email}" password="${secure::salesforceConfig.password}" securityToken="${secure::salesforceConfig.token}" />
     </salesforce:sfdc-config>
     <api-gateway:autodiscovery apiId="${secure::apiDiscovery.apiId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="618c4d88-3351-4aba-9ee5-9eaf142b3538" flowRef="sf-sapi-main" />
-	<njams:inline-configuration-config name="NJAMS_Inline_configuration" doc:name="NJAMS Inline configuration" doc:id="c47e0e69-2c38-4210-a805-541622ed52e4" deployment="sf-sapi" appName="1.0.0" >
-		<njams:communication-protocol >
-			<njams:http-instance host="os0146" port="8080" path="njams" dataProviderPrefix="sdk" >
-				<njams:authentication user="admin" password="admin" />
-			</njams:http-instance>
-		</njams:communication-protocol>
-	</njams:inline-configuration-config>
 </mule>

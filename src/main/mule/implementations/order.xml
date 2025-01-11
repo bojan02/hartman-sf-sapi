@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="post-order-pagination-sp-flow" doc:id="a5f61b7b-2aed-4716-bdb3-9a4d40e73bb9" >
+		<flow-ref doc:name="get-accounts-flow" doc:id="d82cba9e-0036-48a0-b2aa-ff4d0cff1cb9" name="get-accounts-flow" target="sfAccounts"/>
+		<ee:transform doc:name="Filter orders from SP vars.filteredAccounts" doc:id="e1d6e3ca-fd82-4585-927a-202dbcb49358" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="filteredAccounts" ><![CDATA[%dw 2.0
+output application/json
+
+var comparedAccounts = (payload map (order) -> 
+      {
+        accountId: (vars.sfAccounts filter (account) -> account.accountName == order.accountName).id[0] default null,
+        accountName: order.accountName,
+        orderStartDate: order.orderStartDate,
+        status: order.status
+      }
+    )
+---
+{
+  matchedAccounts: (comparedAccounts) filter (record) -> record.accountId != null,
+  unmatchedAccounts:((comparedAccounts) filter (record) -> record.accountId == null) map (record) -> record - "accountId"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="get-contract-order-flow" doc:id="39893ff0-c485-4454-8e2a-c8026dea7aa5" name="get-contract-order-flow"/>
+		<ee:transform doc:name="Map Orders to CSV" doc:id="ea63a2fd-2c34-4e99-8eb9-08f1371e3a04">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+---
+vars.orders]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value='#["Order"]' doc:name="Set vars.sfObjectType" doc:id="9a50a463-3cc9-444b-809d-2c7474bb26e0" variableName="sfObjectType" />
+		<set-variable value='#["upsert"]' doc:name="Set vars.operation" doc:id="7831426b-2fc8-4083-912e-7698708d1fef" variableName="operation" />
+		<set-variable value='#["Id"]' doc:name="Set vars.externalIdField" doc:id="d2967e59-83d6-452a-a415-277be1109fd3" variableName="externalIdField" />
+		<flow-ref doc:name="post-pagination-flow" doc:id="a5223985-057e-4350-861f-204cdaa7f6b0" name="post-pagination-flow" />
+	</flow>
+	<flow name="get-contract-order-flow" doc:id="b58c77b8-1802-4324-aaab-9e464a731ea8" >
+		<ee:transform doc:name="Set Empty vars.orders Array" doc:id="bb9b6319-ddbd-490e-b8bf-c84e6b27214c" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="for-each-order" doc:id="77958b3b-5796-4ad7-abe1-71a3919d6c60" collection="#[vars.filteredAccounts.matchedAccounts]">
+			<set-variable value="#[payload.accountId]" doc:name="Set vars.accountId" doc:id="ba6e48a3-68bd-4914-9245-4e7862f886c4" variableName="accountId"/>
+			<flow-ref doc:name="get-contract-by-accountId-flow" doc:id="78b4c1c9-1886-4444-b81e-8540f433f147" name="get-contract-by-accountId-flow" target="findContract"/>
+			<choice doc:name="Choice" doc:id="a96e83b8-ce17-4d22-857d-ff5d0ed796e1" >
+				<when expression='#[!isEmpty(vars.findContract)]'>
+					<ee:transform doc:name="Orders mapping" doc:id="a6628f6c-9f26-48e4-8b25-9720f0ad2324" >
+						<ee:message />
+						<ee:variables >
+							<ee:set-variable variableName="orders" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.orders ++ 
+[{
+	"AccountId": payload.accountId,
+	"EffectiveDate": payload.orderStartDate,
+	"ContractId": vars.findContract.id,
+	"Status": payload.status
+}]]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</when>
+				<otherwise >
+					<flow-ref doc:name="post-contract-flow" doc:id="4e7ad94a-60ea-4ef5-ad2b-87080d258f13" name="post-contract-flow" />
+					<ee:transform doc:name="Orders mapping" doc:id="ff8644aa-32ef-4d93-bed9-c7bc86148d91">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="orders"><![CDATA[%dw 2.0
+output application/json
+---
+vars.orders ++ 
+[{
+	"AccountId": payload.AccountId[0],
+	"EffectiveDate": payload.StartDate[0],
+	"ContractId": vars.contract.items[0].id,
+	"Status": payload.Status[0]
+}]]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+				</otherwise>
+			</choice>
+		</foreach>
+	</flow>
+</mule>

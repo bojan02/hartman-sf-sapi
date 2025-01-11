@@ -153,4 +153,49 @@ output application/json
 			</otherwise>
 		</choice>
 	</sub-flow>
+		<!-- [STUDIO:"post-pagination-sp-flow1"]<flow name="post-pagination-sp-flow1" doc:id="0c78a571-1327-48ec-8c6e-e1edd631838b">
+		<ee:transform doc:name="Account mapping SF Create" doc:id="a4820a02-6944-4e62-87d5-782c1da2e6d6">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+&#45;&#45;-
+payload map (accountData, indexOfData) -> {
+	"Name": accountData.accountName,
+	"Email__c": accountData.email,
+	"Phone": accountData.phone,
+	"CustomerPriority__c": "Medium",
+	"SLAExpirationDate__c": accountData.slaExpirationDate as Date{"format": "yyyy-MM-dd"},
+	"Active__c": "Yes"
+}&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create-job-bulk-api-v2 doc:name="Create job bulk api v 2" doc:id="8e17fd95-e0ee-46f8-820a-7c07b2259414" config-ref="Salesforce_Config" objectType="Account" operation="upsert" lineEnding="CRLF" externalIdFieldName="Id" />
+		<set-variable value="#[payload.id&#93;" doc:name="Set vars.jobId" doc:id="e2812172-8908-45e8-bb3f-9d8003f593c3" variableName="jobId" />
+		<salesforce:retrieve-job-failed-results-bulk-v2 doc:name="Retrieve job failed results bulk v 2" doc:id="f13c72bc-f40f-4d2c-9e5b-8a9a3a6e3d84" config-ref="Salesforce_Config" id="#[vars.jobId&#93;" />
+		<salesforce:retrieve-job-successful-results-bulk-v2 doc:name="Retrieve job successful results bulk v 2" doc:id="39d1692e-7457-4e5a-a949-f0692a99c5bf" config-ref="Salesforce_Config" id="#[vars.jobId&#93;" />
+		<salesforce:get-all-jobs-bulk-api-v2 doc:name="Get all jobs bulk api v 2" doc:id="73bdc37f-00c3-4987-9bf7-d6904ccbcb3a" config-ref="Salesforce_Config"/>
+		<salesforce:get-query-job-info-bulk-api-v2 doc:name="Get query job info bulk api v 2" doc:id="a67cd634-fa39-4d74-be2d-b9f45004ed99" config-ref="Salesforce_Config" id="#[payload.id[0 to sizeOf(payload.id)-4&#93;&#93;"/>
+	</flow> [STUDIO] -->
+		<flow name="post-account-pagination-sp-flow" doc:id="a5ac55f8-57cd-48f2-8d21-233835da5424" >
+		<ee:transform doc:name="Account mapping SF Create" doc:id="75918eb9-8432-4bd8-9ffa-4cf5a79ece9f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+---
+payload map (accountData, indexOfData) -> {
+	"Name": accountData.accountName,
+	"Email__c": accountData.email,
+	"Phone": accountData.phone,
+	"CustomerPriority__c": "Medium",
+	"SLAExpirationDate__c": accountData.slaExpirationDate as Date{"format": "yyyy-MM-dd"},
+	"Active__c": "Yes"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value='#["Account"]' doc:name="Set vars.sfObjectType" doc:id="6d65a808-8e92-4478-aaf1-18d309b91689" variableName="sfObjectType"/>
+		<set-variable value='#["upsert"]' doc:name="Set vars.operation" doc:id="6400b901-da69-4ac0-91df-d8d03b5e137d" variableName="operation"/>
+		<set-variable value='#["Id"]' doc:name="Set vars.externalIdField" doc:id="93dd8bae-a807-4d0d-8244-f3c9db7601d8" variableName="externalIdField"/>
+		<flow-ref doc:name="post-pagination-flow" doc:id="cec82a62-748b-4d98-8764-b69eb42925f0" name="post-pagination-flow"/>
+	</flow>
+
 </mule>
