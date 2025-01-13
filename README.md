@@ -5,3 +5,5 @@ The project involves creating and managing integrations between Salesforce, Dyna
 [SalesForce to Dynamics CRM integration.pdf](https://github.com/user-attachments/files/18384223/SalesForce.to.Dynamics.CRM.integration.pdf)
 
 [Part2.pdf](https://github.com/user-attachments/files/18384224/Part2.pdf)
+
+[pom.xml](https://drive.google.com/file/d/1c73Iq7mwhHHT3aWeN0_7npNYAHaW_oe8/view?usp=sharing) - move file pom.xml from directory ~/parent-pom/pom.xml to your workspace folder
